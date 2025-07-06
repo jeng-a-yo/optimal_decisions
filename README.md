@@ -1,93 +1,181 @@
-PRJ1: Optimal WIP Transport Scheduling
+# PRJ1 Short Report: Optimal WIP Transport Scheduling
 
-📌 Project Overview
+**Name:** 鄭丞佑
 
-This project aims to develop optimization models for Work In Progress (WIP) transport scheduling using multiple carts in a factory. Each WIP has:
+---
+
+## 🔹 Problem Overview
+
+This project develops optimization models for Work In Progress (WIP) transport scheduling using multiple carts in a factory. Each WIP has:
 
 - A remaining Q-time (deadline)
 - An initial location (FROM)
 - A destination location (TO)
 
-The goal is to assign transport tasks to carts such that the total cost is minimized, where the total cost is defined as:
+**Objective:** Minimize total cost defined as:
 
-- Penalty for late delivery: M = 100000 per unit time delay
-- Cart operating time cost: h = 1 per unit time
+- **Penalty for late delivery:** M = 100000 per unit time delay
+- **Cart operating time cost:** h = 1 per unit time
 
-The penalty cost dominates, so satisfying deadlines is critical.
-
----
-
-Key files:
-
-- app.py: Main application runner.
-- preprocessing.py: Data preprocessing and loading scripts.
-- wip_even_model.py: Contains three candidate models for even distribution (basic case), where each cart transports exactly 2 WIPs.
-- wip_best_model.py: Placeholder for the best (extension case) model, not yet developed.
-- check_answer.py: Evaluates solutions for feasibility and calculates penalties.
-- get_time.py: Utilities for runtime analysis.
-- prj1_description.pptx: Problem specification and requirements.
+Meeting deadlines is critical due to the dominating penalty cost.
 
 ---
 
-✅ Current Progress
+## 🔹 Parameter Definitions
 
-- Implemented three models in wip_even_model.py.
-- The third model produces an objective value of 851 for the 40-WIP even test case, matching the reference solution.
+**Sets**
 
-⚠️ Known Issues
+$$
+\begin{aligned}
+& C : \text{ set of carts (index c)} \\
+& W : \text{ set of WIPs (index w)} \\
+& L : \text{ set of locations}
+\end{aligned}
+$$
 
-- Although the objective function value is correct, check_answer.py flags a penalty on WIP pair ("W11", "W37").
-- This indicates potential bugs in constraint formulations or penalty calculations.
-- Due to this uncertainty, the best model development is not started yet.
+**Parameters**
 
----
+$$
+\begin{aligned}
+& q_w : \text{ remaining Q-time for WIP } w \\
+& t_{i,j} : \text{ transfer time from location } i \text{ to } j \\
+& from_w : \text{ initial location of WIP } w \\
+& to_w : \text{ destination location of WIP } w \\
+& init_c : \text{ initial location of cart } c \\
+& M : \text{ penalty cost per unit time delay (100000)} \\
+& h : \text{ cart operating time cost per unit time (1)}
+\end{aligned}
+$$
 
-📝 Problem Description (Summary)
+**Variables**
 
-- Basic (even) case:  
-  Each cart carries exactly 2 WIPs. Example: 40 WIPs and 20 carts → 2 WIPs per cart.
-
-- Extension (best) case:  
-  No strict distribution; carts may carry different numbers of WIPs (3, 4, 5, etc.), but at most 2 simultaneously loaded.
-
-Inputs:
-
-1. cart_data.csv: CART_ID, INIT_LOC
-2. time_matrix.csv: FROM, TO, XFER_TIME for 50 locations
-3. wip_data_XX_YY.csv: WIP_ID, Remaining Q-Time, FROM, TO
-
-Outputs:
-
-A CSV containing:
-
-CART_ID | ORDER | WIP_ID | ACTION (PICKUP/DELIVERY) | COMPLETE_TIME
-
----
-
-💡 Next Steps
-
-1. Debug penalty calculation in wip_even_model.py third model to ensure feasibility.
-2. Start best model development after confirming even model correctness.
-3. Refactor and modularize code for clarity and scalability.
+$$
+\begin{aligned}
+& x_{c,w} \in \{0,1\} : \text{ 1 if WIP } w \text{ assigned to cart } c, \text{ else 0} \\
+& s_{c,w} \ge 0 : \text{ start time for WIP } w \text{ by cart } c \\
+& d_{c,w} \ge 0 : \text{ delivery time for WIP } w \text{ by cart } c
+\end{aligned}
+$$
 
 ---
 
-📖 Reference Objective Values
+## 🔹 Model 1: Simple Sequential Assignment
 
-| Case     | Even Objective | Best Objective |
-| -------- | -------------- | -------------- |
-| wip_10_1 | 249            | 249            |
-| wip_10_2 | 249            | 234            |
-| wip_40_0 | 851            | 592            |
+**Objective**
+
+Minimize total cost:
+
+$$
+\min \sum_{c \in C} \sum_{w \in W} \left[ h \times (d_{c,w} - s_{c,w}) + M \times \max(0, d_{c,w} - q_w) \right]
+$$
+
+**Constraints**
+
+1. Each WIP is assigned to exactly one cart:
+
+$$
+\sum_{c \in C} x_{c,w} = 1, \quad \forall w \in W
+$$
+
+2. Each cart carries exactly two WIPs:
+
+$$
+\sum_{w \in W} x_{c,w} = 2, \quad \forall c \in C
+$$
+
+3. Service time calculated sequentially without routing optimization.
 
 ---
 
-🔧 Usage
+## 🔹 Model 2: Improved Time-Indexed Assignment
 
-1. Run the main application:
+**Objective**
 
-python app.py
+Same as Model 1.
 
-2. Check solution feasibility:
+**Key Improvements**
 
-python check_answer.py
+- Uses time matrix routes explicitly for service time calculations.
+- Defines pickup and delivery order within each cart.
+
+**Additional Constraints**
+
+1. Ordering constraints:
+
+$$
+s_{c,w_2} \ge d_{c,w_1} + t_{to_{w_1}, from_{w_2}}, \quad \text{if } w_1 \text{ before } w_2
+$$
+
+2. Delivery time:
+
+$$
+d_{c,w} = s_{c,w} + t_{from_w, to_w}
+$$
+
+3. Start time includes cart’s initial travel time:
+
+$$
+s_{c,w_1} \ge t_{init_c, from_{w_1}}
+$$
+
+---
+
+## 🔹 Model 3: Feasibility-Driven Sequential Optimization
+
+**Objective**
+
+Same as Models 1 and 2.
+
+**Key Characteristics**
+
+- Optimized routing within each cart to minimize total travel time.
+- Hard constraints to guarantee feasibility (no deadline violation).
+
+**Additional Constraints**
+
+1. No lateness (hard) constraint:
+
+$$
+d_{c,w} \le q_w, \quad \forall c, w
+$$
+
+2. Full sequential route time calculation including cart initial travel, pickup-to-delivery time, and inter-WIP transfer if two WIPs are assigned.
+
+---
+
+## 🔹 Short Discussion
+
+Model 3 produces the correct objective (851 for the 40-WIP even case) but `check_answer.py` flagged a penalty for WIP pair (W11, W37). This suggests potential bugs in formulation or penalty calculation logic.
+
+**Key Learning Points**
+
+- Accurate sequencing and time calculations are critical in transport scheduling.
+- Hard feasibility constraints simplify deadline satisfaction but may restrict solution flexibility.
+- Even when the objective value matches the reference, feasibility violations can occur due to:
+  - Incorrect deadline constraint implementation.
+  - Missing constraints to enforce WIP delivery order consistency.
+  - Errors in time matrix usage for pickup-to-delivery or inter-WIP routing.
+- The penalty function is extremely sensitive because of the large penalty coefficient (M=100000). Small formulation or implementation errors will dominate the objective value and result in infeasible solutions despite optimal-looking costs.
+
+**Debugging Insights**
+
+- The flagged penalty for W11 and W37 indicates that at least one WIP in this pair is delivered later than its Q-time.
+- Possible causes include:
+  - Miscalculating the start time of the second WIP on a cart.
+  - Missing transfer time between the delivery of the first WIP and the pickup of the second WIP.
+  - Incorrect initialization of cart starting locations in the model.
+- Stepwise debugging approach:
+  1. Verify time calculations for both WIPs assigned to each cart.
+  2. Print intermediate decision variable values (start time, delivery time) to cross-check feasibility.
+  3. Compare modeled sequence logic with time matrix data for consistency.
+
+**Practical Implications**
+
+- This problem reflects real factory transport scheduling where feasibility (meeting deadlines) is more important than minimizing operating costs.
+- Strict constraints ensure that production flows are not interrupted by late deliveries, which can cause line downtime and heavy penalties in manufacturing contracts.
+
+**Next Steps**
+
+1. Debug penalty calculation and constraint formulation in Model 3 to ensure all delivery deadlines are respected.
+2. Extend the model to the best (extension) case, allowing variable WIP assignments per cart, after confirming the even case correctness.
+3. Modularize code for clarity and maintainability to support scalable testing on larger WIP datasets in future projects.
