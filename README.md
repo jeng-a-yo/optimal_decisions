@@ -20,7 +20,6 @@ The penalty cost dominates, so satisfying deadlines is critical.
 Repository Structure
 
 prj1/
-├── **pycache**/
 ├── output_results/
 ├── sample_results/
 ├── wip_data/
@@ -28,7 +27,6 @@ prj1/
 ├── cart_data.csv
 ├── check_answer.py
 ├── get_time.py
-├── gurobi.log
 ├── preprocessing.py
 ├── prj1_description.pptx
 ├── README.md
@@ -104,30 +102,10 @@ CART_ID | ORDER | WIP_ID | ACTION (PICKUP/DELIVERY) | COMPLETE_TIME
 
 🔧 Usage
 
-1. Preprocess data:
+1. Run the main application:
 
-python preprocessing.py
+python app.py
 
-2. Run model:
-
-python wip_even_model.py
-
-3. Check solution feasibility:
+2. Check solution feasibility:
 
 python check_answer.py
-
-4. Measure runtime (optional):
-
-python get_time.py
-
----
-
-✏️ Author Notes
-
-The current model structure and scripts were designed for clarity, debugging, and incremental implementation of constraints. The project will be iteratively improved to ensure correctness, clean mathematical formulation, and performance before integrating the extension (best) model formulation.
-
----
-
-📄 License
-
-For internal academic coursework use only.
