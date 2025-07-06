@@ -17,39 +17,6 @@ The penalty cost dominates, so satisfying deadlines is critical.
 
 ---
 
-Repository Structure
-
-optimal_decisions/
-├── output_results/
-│ ├── wip_10_1_even.csv
-│ ├── wip_10_2_even.csv
-│ └── wip_40_0_even.csv
-│
-├── sample_results/
-│ ├── wip_10_1_best.csv
-│ ├── wip_10_1_even.csv
-│ ├── wip_10_2_best.csv
-│ ├── wip_10_2_even.csv
-│ ├── wip_40_0_best.csv
-│ └── wip_40_0_even.csv
-│
-├── wip_data/
-│ ├── wip_data_10_1.csv
-│ ├── wip_data_10_2.csv
-│ └── wip_data_40_0.csv
-│
-├── app.py
-├── cart_data.csv
-├── check_answer.py
-├── get_time.py
-├── preprocessing.py
-├── prj1_description.pptx
-├── README.md
-├── time_matrix.csv
-├── wip_best_model.py
-├── wip_even_model.py
-└── wip_utils.py
-
 Key files:
 
 - app.py: Main application runner.
